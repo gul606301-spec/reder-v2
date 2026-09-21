@@ -1,0 +1,6 @@
+{
+  "name": "Reader Hub",
+  "description": "Kitap okuma takibi, günlük hedefler, kitaplık ve kitap dünyası keşif uygulaması",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
