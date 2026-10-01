@@ -36,7 +36,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col font-sans">
+    <div className="app-shell min-h-screen text-slate-950 flex flex-col font-sans">
       {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
@@ -46,7 +46,7 @@ function AppContent() {
       />
 
       {/* Main Tab Screen Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+      <main className="app-main flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {activeTab === 'home' && (
           <HomeTab
             onSelectBook={(book) => setSelectedBook(book)}

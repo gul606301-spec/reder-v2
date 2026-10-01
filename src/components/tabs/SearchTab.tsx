@@ -208,7 +208,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
   return (
     <div className="space-y-6 pb-20 md:pb-12 animate-in fade-in duration-300">
       {/* Keşfet Navigation Tabs */}
-      <div className="flex bg-neutral-900 p-1.5 rounded-2xl border border-neutral-800 overflow-x-auto max-w-full">
+      <div className="flex bg-white/70 p-1.5 rounded-[1.35rem] border border-white shadow-[0_12px_30px_rgba(42,42,76,0.07)] overflow-x-auto max-w-full backdrop-blur-sm">
         {[
           { id: 'search', label: 'Kitap Arama', icon: Search },
           { id: 'recommend', label: 'Kitap Öner (Gizemli Kartlar)', icon: Sparkles },
@@ -222,8 +222,8 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
               onClick={() => setSubTab(tab.id as any)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 subTab === tab.id
-                  ? 'bg-amber-500 text-neutral-950 font-bold shadow-md shadow-amber-500/10'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  ? 'bg-[#17233f] text-white font-bold shadow-md shadow-[#17233f]/20'
+                  : 'text-slate-500 hover:text-[#17233f] hover:bg-[#fff4ee]'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -237,30 +237,33 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
       {subTab === 'search' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <div>
-            <h1 className="text-2xl font-bold font-serif text-white">Kitap & Yazar Keşfet</h1>
-            <p className="text-neutral-400 text-xs sm:text-sm mt-1">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff0e8] px-3 py-1 text-[10px] font-extrabold tracking-[0.14em] text-[#dc5c61] uppercase">
+              Okuma yolculuğun
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold font-serif text-[#17233f] mt-3">Kitap & Yazar Keşfet</h1>
+            <p className="text-slate-500 text-xs sm:text-sm mt-2 max-w-lg leading-relaxed">
               Milyonlarca kitap arasından aradığın eseri bul ve kitaplığına tek tıkla ekle.
             </p>
           </div>
 
           {/* Search Bar */}
-          <div className="relative">
-            <Search className="w-5 h-5 text-neutral-500 absolute left-4 top-3.5" />
+          <div className="relative rounded-[1.35rem] bg-white p-1.5 shadow-[0_14px_35px_rgba(42,42,76,0.09)] border border-white">
+            <Search className="w-5 h-5 text-[#e56a60] absolute left-5 top-5" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Kitap adı, yazar veya ISBN arayın..."
-              className="w-full bg-neutral-850 border border-neutral-750 focus:border-amber-500 rounded-2xl pl-12 pr-10 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none transition-colors shadow-inner"
+              className="w-full bg-[#fffaf7] border border-[#f1e2d9] focus:border-[#f18370] focus:ring-4 focus:ring-[#f8d9d0]/50 rounded-xl pl-12 pr-10 py-3.5 text-sm text-[#17233f] placeholder:text-slate-400 focus:outline-none transition-colors"
             />
             {isLoading && (
-              <Loader2 className="w-5 h-5 text-amber-400 animate-spin absolute right-4 top-3.5" />
+              <Loader2 className="w-5 h-5 text-[#e56a60] animate-spin absolute right-5 top-5" />
             )}
           </div>
 
           {/* Tag Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <span className="text-[11px] text-neutral-500 uppercase tracking-wider font-semibold mr-1 shrink-0">
+            <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold mr-1 shrink-0">
               Kategoriler:
             </span>
             {tags.map((tag) => (
@@ -272,8 +275,8 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
                 }}
                 className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedTag === tag
-                    ? 'bg-amber-500 text-neutral-950 font-bold'
-                    : 'bg-neutral-850 hover:bg-neutral-800 text-neutral-400 border border-neutral-800'
+                    ? 'bg-[#f06e5a] text-white font-bold shadow-md shadow-[#f06e5a]/20'
+                    : 'bg-white/80 hover:bg-white text-slate-500 border border-white shadow-sm'
                 }`}
               >
                 {tag}
@@ -284,7 +287,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
           {/* Search Results */}
           {results.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-neutral-400">
+              <h3 className="text-sm font-semibold text-slate-500">
                 Arama Sonuçları ({results.length} kitap bulundu)
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -293,13 +296,13 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
                   return (
                     <div
                       key={book.id}
-                      className="group bg-neutral-850 border border-neutral-800 hover:border-neutral-700 rounded-2xl p-3 flex flex-col justify-between transition-all"
+                      className="group bg-white/90 border border-white hover:-translate-y-1 rounded-[1.3rem] p-3 flex flex-col justify-between transition-all duration-300 shadow-[0_10px_24px_rgba(42,42,76,0.07)] hover:shadow-[0_18px_32px_rgba(42,42,76,0.13)]"
                     >
                       <div
                         onClick={() => onSelectBook(book)}
                         className="cursor-pointer"
                       >
-                        <div className="relative w-full aspect-[2/3] rounded-xl overflow-hidden bg-neutral-800 mb-2.5 border border-neutral-750 shadow-md">
+                        <div className="relative w-full aspect-[2/3] rounded-[1rem] overflow-hidden bg-[#17233f] mb-2.5 shadow-md">
                           <BookCover
                             src={book.cover}
                             alt={book.title}
@@ -308,18 +311,18 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
                         </div>
-                        <h4 className="font-serif font-bold text-xs text-white group-hover:text-amber-400 transition-colors line-clamp-1">
+                        <h4 className="font-serif font-bold text-xs text-[#17233f] group-hover:text-[#e25f5a] transition-colors line-clamp-1">
                           {book.title}
                         </h4>
-                        <p className="text-[11px] text-neutral-400 truncate">{book.author}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{book.author}</p>
                       </div>
 
                       <button
                         onClick={() => addToLibrary(book, 'want')}
                         className={`mt-2.5 w-full py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-colors ${
                           inLib
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-neutral-800 hover:bg-neutral-750 text-neutral-200 border border-neutral-700'
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : 'bg-[#fff4ee] hover:bg-[#ffe7dc] text-[#bd5955] border border-[#ffd9cc]'
                         }`}
                       >
                         {inLib ? (
@@ -329,7 +332,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
                           </>
                         ) : (
                           <>
-                            <Plus className="w-3.5 h-3.5 text-amber-400" />
+                            <Plus className="w-3.5 h-3.5" />
                             <span>Listeye Ekle</span>
                           </>
                         )}
@@ -344,15 +347,18 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
           {/* Default Popular Books if query empty */}
           {!query.trim() && (
             <div className="space-y-4 pt-2">
-              <h3 className="text-base font-bold font-serif text-white">Öne Çıkan Popüler Eserler</h3>
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-xl font-bold font-serif text-[#17233f]">Öne Çıkan Popüler Eserler</h3>
+                <span className="hidden sm:block text-xs font-semibold text-[#7666cb]">Senin için seçildi</span>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {featuredBooks.map((book) => (
                   <div
                     key={book.id}
                     onClick={() => onSelectBook(book)}
-                    className="group bg-neutral-850 border border-neutral-800 hover:border-neutral-700 rounded-2xl p-3 cursor-pointer transition-all flex flex-col justify-between"
+                    className="group bg-white/90 border border-white hover:-translate-y-1 rounded-[1.3rem] p-3 cursor-pointer transition-all duration-300 flex flex-col justify-between shadow-[0_10px_24px_rgba(42,42,76,0.07)] hover:shadow-[0_18px_32px_rgba(42,42,76,0.13)]"
                   >
-                    <div className="relative w-full aspect-[2/3] rounded-xl overflow-hidden bg-neutral-800 mb-2 border border-neutral-750 shadow-md">
+                    <div className="relative w-full aspect-[2/3] rounded-[1rem] overflow-hidden bg-[#17233f] mb-2 shadow-md">
                       <BookCover
                         src={book.cover}
                         alt={book.title}
@@ -362,10 +368,10 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onSelectBook }) => {
                       />
                     </div>
                     <div>
-                      <h4 className="font-serif font-bold text-xs text-white group-hover:text-amber-400 transition-colors line-clamp-1">
+                      <h4 className="font-serif font-bold text-xs text-[#17233f] group-hover:text-[#e25f5a] transition-colors line-clamp-1">
                         {book.title}
                       </h4>
-                      <p className="text-[11px] text-neutral-400 truncate">{book.author}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{book.author}</p>
                     </div>
                   </div>
                 ))}
