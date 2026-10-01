@@ -19,13 +19,14 @@ export const normalizeText = (text?: string): string => {
 };
 
 /**
- * Requests a cover for the exact edition ISBN instead of an arbitrary
- * Open Library cover record. A cover record can be attached to another
- * language edition of the same work; the ISBN identifies the Turkish
- * edition selected below.
+ * Open Library can associate an ISBN with an incorrect cover, so its remote
+ * cover records are not sufficient evidence that an image belongs to a
+ * Turkish edition. Only a locally curated Turkish cover may be displayed.
+ * Until one is added, BookCover renders its existing title/author fallback
+ * instead of showing a mismatched book image.
  */
-const coverForEditionIsbn = (isbn13: string): string =>
-  `https://covers.openlibrary.org/b/isbn/${encodeURIComponent(isbn13)}-M.jpg?default=false`;
+const verifiedTurkishCover = (cover?: string): string | undefined =>
+  cover?.startsWith('/book-covers/tr/') ? cover : undefined;
 
 /**
  * Strips hyphens, spaces, and non-alphanumeric characters from ISBNs.
@@ -580,7 +581,7 @@ export function normalizeBookWithTurkishEdition(raw: Partial<Book> & { isbns?: s
 
   if (verifiedWork) {
     const tr = verifiedWork.turkishEdition;
-    const turkishCover = coverForEditionIsbn(tr.isbn13);
+    const turkishCover = verifiedTurkishCover(tr.cover);
     const editions: BookEdition[] = [
       {
         id: `${verifiedWork.workId}-tr`,
@@ -594,7 +595,7 @@ export function normalizeBookWithTurkishEdition(raw: Partial<Book> & { isbns?: s
         publisher: tr.publisher,
         pages: tr.pages,
         year: tr.year,
-        verifiedCover: true,
+        verifiedCover: Boolean(turkishCover),
       },
     ];
 
@@ -622,7 +623,7 @@ export function normalizeBookWithTurkishEdition(raw: Partial<Book> & { isbns?: s
       title: tr.title, // Türkçe kitap adı
       originalTitle: verifiedWork.originalTitle, // Orijinal adı
       author: verifiedWork.author,
-      cover: turkishCover, // ISBN'i doğrulanmış aynı Türkçe baskının kapağı
+      cover: turkishCover,
       publisher: tr.publisher, // Türkçe yayınevi
       isbn: tr.isbn13, // Türkçe ISBN
       isbn10: tr.isbn10,
