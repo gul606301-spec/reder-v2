@@ -19,6 +19,15 @@ export const normalizeText = (text?: string): string => {
 };
 
 /**
+ * Requests a cover for the exact edition ISBN instead of an arbitrary
+ * Open Library cover record. A cover record can be attached to another
+ * language edition of the same work; the ISBN identifies the Turkish
+ * edition selected below.
+ */
+const coverForEditionIsbn = (isbn13: string): string =>
+  `https://covers.openlibrary.org/b/isbn/${encodeURIComponent(isbn13)}-M.jpg?default=false`;
+
+/**
  * Strips hyphens, spaces, and non-alphanumeric characters from ISBNs.
  */
 export const cleanISBN = (isbn?: string): string => {
@@ -571,13 +580,14 @@ export function normalizeBookWithTurkishEdition(raw: Partial<Book> & { isbns?: s
 
   if (verifiedWork) {
     const tr = verifiedWork.turkishEdition;
+    const turkishCover = coverForEditionIsbn(tr.isbn13);
     const editions: BookEdition[] = [
       {
         id: `${verifiedWork.workId}-tr`,
         title: tr.title,
         language: 'tr',
         isTurkish: true,
-        cover: tr.cover,
+        cover: turkishCover,
         isbn: tr.isbn13,
         isbn10: tr.isbn10,
         isbn13: tr.isbn13,
@@ -612,7 +622,7 @@ export function normalizeBookWithTurkishEdition(raw: Partial<Book> & { isbns?: s
       title: tr.title, // Türkçe kitap adı
       originalTitle: verifiedWork.originalTitle, // Orijinal adı
       author: verifiedWork.author,
-      cover: tr.cover, // AYNI Türkçe baskıya ait kapak
+      cover: turkishCover, // ISBN'i doğrulanmış aynı Türkçe baskının kapağı
       publisher: tr.publisher, // Türkçe yayınevi
       isbn: tr.isbn13, // Türkçe ISBN
       isbn10: tr.isbn10,
