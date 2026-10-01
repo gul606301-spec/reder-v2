@@ -19,6 +19,16 @@ export const normalizeText = (text?: string): string => {
 };
 
 /**
+ * Open Library can associate an ISBN with an incorrect cover, so its remote
+ * cover records are not sufficient evidence that an image belongs to a
+ * Turkish edition. Only a locally curated Turkish cover may be displayed.
+ * Until one is added, BookCover renders its existing title/author fallback
+ * instead of showing a mismatched book image.
+ */
+const verifiedTurkishCover = (cover?: string): string | undefined =>
+  cover?.startsWith('/book-covers/tr/') ? cover : undefined;
+
+/**
  * Strips hyphens, spaces, and non-alphanumeric characters from ISBNs.
  */
 export const cleanISBN = (isbn?: string): string => {
@@ -571,20 +581,21 @@ export function normalizeBookWithTurkishEdition(raw: Partial<Book> & { isbns?: s
 
   if (verifiedWork) {
     const tr = verifiedWork.turkishEdition;
+    const turkishCover = verifiedTurkishCover(tr.cover);
     const editions: BookEdition[] = [
       {
         id: `${verifiedWork.workId}-tr`,
         title: tr.title,
         language: 'tr',
         isTurkish: true,
-        cover: tr.cover,
+        cover: turkishCover,
         isbn: tr.isbn13,
         isbn10: tr.isbn10,
         isbn13: tr.isbn13,
         publisher: tr.publisher,
         pages: tr.pages,
         year: tr.year,
-        verifiedCover: true,
+        verifiedCover: Boolean(turkishCover),
       },
     ];
 
@@ -612,7 +623,7 @@ export function normalizeBookWithTurkishEdition(raw: Partial<Book> & { isbns?: s
       title: tr.title, // Türkçe kitap adı
       originalTitle: verifiedWork.originalTitle, // Orijinal adı
       author: verifiedWork.author,
-      cover: tr.cover, // AYNI Türkçe baskıya ait kapak
+      cover: turkishCover,
       publisher: tr.publisher, // Türkçe yayınevi
       isbn: tr.isbn13, // Türkçe ISBN
       isbn10: tr.isbn10,

@@ -34,30 +34,44 @@ interface ReaderContextType {
   readingLogs: ReadingLog[];
   posts: SocialPost[];
   accounts: Record<string, UserAccount>;
+  customLists: CustomBookList[];
   isReady: boolean;
-  signUp: (name: string, email: string, username: string, phone: string | undefined, password: string | undefined) => { success: boolean; error?: string };
+  // Auth & Account Management
+  signUp: (data: { name: string; email: string; phone?: string; username?: string; password?: string }) => { success: boolean; error?: string };
   signIn: (identifier: string, password?: string) => { success: boolean; error?: string };
   switchAccount: (userId: string) => void;
   signOut: () => void;
   updateProfile: (changes: Partial<ReaderProfile>) => void;
   toggleSpoilerPreference: () => void;
-  createPost: (content: string, type: 'general' | 'review' | 'quote', bookData?: { id: string; title: string; author: string; cover?: string }) => void;
+  // Social Posts & Reviews
+  createPost: (params: {
+    content: string;
+    bookId?: string;
+    bookData?: { id: string; title: string; author: string; cover?: string };
+    rating?: number;
+    isSpoiler?: boolean;
+    type?: 'general' | 'review' | 'quote' | 'activity';
+  }) => void;
   likePost: (postId: string) => void;
-  addComment: (postId: string, text: string) => void;
+  addComment: (postId: string, content: string, isSpoiler?: boolean) => void;
   reportPostSpoiler: (postId: string) => void;
-  rateAndReviewBook: (bookId: string, rating: number, review: string) => void;
+  rateAndReviewBook: (bookId: string, rating: number, reviewText?: string, isSpoiler?: boolean) => void;
+  // Library Actions
   addToLibrary: (book: Book, status?: ReadingStatus) => void;
   updateBook: (id: string, changes: Partial<LibraryBook>) => void;
   removeFromLibrary: (id: string) => void;
+  toggleFavoriteBook: (bookId: string) => void;
+  // Custom Lists
+  createCustomList: (name: string, description?: string) => void;
+  deleteCustomList: (id: string) => void;
+  addBookToCustomList: (listId: string, bookId: string) => void;
+  removeBookFromCustomList: (listId: string, bookId: string) => void;
+  // Reading tracking
   recordReading: (pages: number, bookId?: string, minutes?: number) => void;
   updateReadingLog: (id: string, pages: number) => void;
   deleteReadingLog: (id: string) => void;
   resetDemo: () => void;
   isInLibrary: (id: string) => boolean;
-  customLists: CustomBookList[];
-  toggleFavoriteBook: (bookId: string) => void;
-  createCustomList: (name: string) => void;
-  deleteCustomList: (listId: string) => void;
 }
 
 const ReaderContext = createContext<ReaderContextType | undefined>(undefined);
@@ -84,6 +98,7 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
 
       const storedAccounts = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
       const storedActiveId = localStorage.getItem(STORAGE_KEYS.ACTIVE_USER_ID);
+      const storedPosts = localStorage.getItem(STORAGE_KEYS.POSTS);
 
       let loadedAccounts: Record<string, UserAccount> = {};
       if (storedAccounts) {
@@ -105,8 +120,6 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
       } else {
         setActiveUserId(null);
       }
-
-      const storedPosts = localStorage.getItem(STORAGE_KEYS.POSTS);
 
       if (storedPosts) {
         const parsedPosts: SocialPost[] = JSON.parse(storedPosts);
@@ -137,33 +150,62 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
   const readingLogs = currentAccount?.readingLogs || [];
   const customLists = currentAccount?.customLists || [];
 
-  // Helper to mutate active account and persist
-  const mutateActiveAccount = (updater: (acc: UserAccount) => Partial<UserAccount> | void) => {
-    if (!activeUserId || !accounts[activeUserId]) return;
-
-    const currentAcc = accounts[activeUserId];
-    const changes = updater(currentAcc);
-    if (!changes) return;
-
-    const updated = { ...currentAcc, ...changes };
-    const newAccounts = { ...accounts, [activeUserId]: updated };
-    setAccounts(newAccounts);
-    saveAccountsToStorage(newAccounts);
+  // Helper to commit changes to the active account
+  const mutateActiveAccount = (
+    updater: (prev: UserAccount) => Partial<UserAccount>,
+  ) => {
+    if (!activeUserId) return;
+    setAccounts((prevAccounts) => {
+      const account = prevAccounts[activeUserId];
+      if (!account) return prevAccounts;
+      const updates = updater(account);
+      const updatedAccount: UserAccount = {
+        ...account,
+        ...updates,
+      };
+      const nextAccounts = {
+        ...prevAccounts,
+        [activeUserId]: updatedAccount,
+      };
+      saveAccountsToStorage(nextAccounts);
+      return nextAccounts;
+    });
   };
 
-  // 1. Sign Up
-  const signUp = (name: string, email: string, username: string, phone: string | undefined, password: string | undefined): { success: boolean; error?: string } => {
+  // 1. Sign Up (Prevent duplicate emails/usernames, create persistent account)
+  const signUp = ({
+    name,
+    email,
+    phone,
+    username,
+    password,
+  }: {
+    name: string;
+    email: string;
+    phone?: string;
+    username?: string;
+    password?: string;
+  }) => {
     const trimmedEmail = email.trim().toLowerCase();
-    const cleanUsername = username.trim().toLowerCase();
+    const cleanUsername = (username || name.toLowerCase()).replace(/[^a-z0-9_]/g, '');
 
-    // Check if email/username already exists
-    if (Object.values(accounts).some((acc) => acc.email.toLowerCase() === trimmedEmail || acc.username.toLowerCase() === cleanUsername)) {
-      return { success: false, error: 'Bu e-posta veya kullanıcı adı zaten kayıtlı.' };
+    // Check duplicate
+    const exists = Object.values(accounts).some(
+      (acc) =>
+        acc.email.toLowerCase() === trimmedEmail ||
+        acc.username.toLowerCase() === cleanUsername ||
+        (phone && acc.phone && acc.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, '')),
+    );
+
+    if (exists) {
+      return { success: false, error: 'Bu e-posta veya kullanıcı adı ile kayıtlı bir hesap zaten var.' };
     }
 
-    const newId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    const newId = `user_${Date.now()}`;
     const today = todayKey();
+
     const newProfile: ReaderProfile = {
+      id: newId,
       name: name.trim(),
       email: trimmedEmail,
       username: cleanUsername,
@@ -213,7 +255,7 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
   };
 
   // 2. Sign In (By email, username, or phone)
-  const signIn = (identifier: string, password?: string): { success: boolean; error?: string } => {
+  const signIn = (identifier: string, password?: string) => {
     const term = identifier.trim().toLowerCase();
     const found = Object.values(accounts).find(
       (acc) =>
@@ -247,278 +289,495 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
   const signOut = () => {
     setActiveUserId(null);
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_ID);
-    // ✅ FİX: Hiçbir veri silinmiyor - accounts, library, readingLogs, posts hepsi localStorage'de kalıyor
   };
 
   // 5. Update Profile
   const updateProfile = (changes: Partial<ReaderProfile>) => {
     mutateActiveAccount((acc) => {
+      const updatedProfile = { ...acc.profile, ...changes };
       return {
-        profile: { ...acc.profile, ...changes },
+        profile: updatedProfile,
+        name: changes.name ?? acc.name,
+        username: changes.username ?? acc.username,
+        phone: changes.phone ?? acc.phone,
       };
     });
   };
 
   // 6. Toggle Spoiler Preference
   const toggleSpoilerPreference = () => {
-    mutateActiveAccount((acc) => {
-      return {
-        profile: { ...acc.profile, hideSpoilers: !acc.profile.hideSpoilers },
-      };
-    });
+    if (!profile) return;
+    const currentVal = profile.hideSpoilers !== false; // default true
+    updateProfile({ hideSpoilers: !currentVal });
   };
 
-  // 7. Create Post
-  const createPost = (content: string, type: 'general' | 'review' | 'quote', bookData?: { id: string; title: string; author: string; cover?: string }) => {
-    if (!activeUserId || !profile) return;
+  // 7. Social Posts with Spoilers
+  const createPost = ({
+    content,
+    bookId,
+    bookData,
+    rating,
+    isSpoiler = false,
+    type = 'general',
+  }: {
+    content: string;
+    bookId?: string;
+    bookData?: { id: string; title: string; author: string; cover?: string };
+    rating?: number;
+    isSpoiler?: boolean;
+    type?: 'general' | 'review' | 'quote' | 'activity';
+  }) => {
+    if (!profile) return;
+    const bookObj =
+      bookData ||
+      (bookId
+        ? library.find((b) => b.id === bookId) || featuredBooks.find((b) => b.id === bookId)
+        : undefined);
 
     const newPost: SocialPost = {
-      id: `post_${Date.now()}`,
-      userId: activeUserId,
+      id: `post-${Date.now()}`,
+      userId: profile.id || activeUserId || 'user',
       userName: profile.name,
-      userAvatar: profile.name.charAt(0).toUpperCase(),
-      content,
-      type,
-      bookData,
-      createdAt: new Date().toISOString(),
+      userUsername: profile.username || 'reader',
+      userAvatar: profile.avatar,
+      type: type || (rating ? 'review' : 'general'),
+      content: content.trim(),
+      book: bookObj
+        ? {
+            id: bookObj.id,
+            title: bookObj.title,
+            author: bookObj.author,
+            cover: bookObj.cover,
+          }
+        : undefined,
+      rating,
+      isSpoiler: Boolean(isSpoiler),
+      spoilerReportedCount: 0,
       likes: [],
       comments: [],
-      spoilerReports: 0,
-      rating: undefined,
-    };
-
-    const updatedPosts = [...posts, newPost];
-    setPosts(updatedPosts);
-    savePostsToStorage(updatedPosts);
-  };
-
-  // 8. Like Post
-  const likePost = (postId: string) => {
-    const post = posts.find((p) => p.id === postId);
-    if (!post || !activeUserId) return;
-
-    const liked = post.likes.includes(activeUserId);
-    const updatedPost = {
-      ...post,
-      likes: liked ? post.likes.filter((id) => id !== activeUserId) : [...post.likes, activeUserId],
-    };
-
-    const updatedPosts = posts.map((p) => (p.id === postId ? updatedPost : p));
-    setPosts(updatedPosts);
-    savePostsToStorage(updatedPosts);
-  };
-
-  // 9. Add Comment
-  const addComment = (postId: string, text: string) => {
-    if (!profile || !activeUserId) return;
-
-    const post = posts.find((p) => p.id === postId);
-    if (!post) return;
-
-    const comment = {
-      id: `comment_${Date.now()}`,
-      userId: activeUserId,
-      userName: profile.name,
-      text,
       createdAt: new Date().toISOString(),
     };
 
-    const updatedPost = {
-      ...post,
-      comments: [...post.comments, comment],
-    };
-
-    const updatedPosts = posts.map((p) => (p.id === postId ? updatedPost : p));
-    setPosts(updatedPosts);
-    savePostsToStorage(updatedPosts);
+    setPosts((prev) => {
+      const next = [newPost, ...prev];
+      savePostsToStorage(next);
+      return next;
+    });
   };
 
-  // 10. Report Post Spoiler
+  const likePost = (postId: string) => {
+    if (!activeUserId) return;
+    setPosts((prev) => {
+      const next = prev.map((p) => {
+        if (p.id !== postId) return p;
+        const hasLiked = p.likes.includes(activeUserId);
+        const nextLikes = hasLiked
+          ? p.likes.filter((id) => id !== activeUserId)
+          : [...p.likes, activeUserId];
+        return { ...p, likes: nextLikes };
+      });
+      savePostsToStorage(next);
+      return next;
+    });
+  };
+
+  const addComment = (postId: string, content: string, isSpoiler = false) => {
+    if (!profile) return;
+    const newComment = {
+      id: `c-${Date.now()}`,
+      userId: profile.id || activeUserId || 'user',
+      userName: profile.name,
+      userAvatar: profile.avatar,
+      content: content.trim(),
+      isSpoiler,
+      createdAt: new Date().toISOString(),
+    };
+
+    setPosts((prev) => {
+      const next = prev.map((p) => {
+        if (p.id !== postId) return p;
+        return {
+          ...p,
+          comments: [...p.comments, newComment],
+        };
+      });
+      savePostsToStorage(next);
+      return next;
+    });
+  };
+
   const reportPostSpoiler = (postId: string) => {
-    const post = posts.find((p) => p.id === postId);
-    if (!post) return;
-
-    const updatedPost = {
-      ...post,
-      spoilerReports: post.spoilerReports + 1,
-    };
-
-    const updatedPosts = posts.map((p) => (p.id === postId ? updatedPost : p));
-    setPosts(updatedPosts);
-    savePostsToStorage(updatedPosts);
+    setPosts((prev) => {
+      const next = prev.map((p) => {
+        if (p.id !== postId) return p;
+        const newCount = (p.spoilerReportedCount || 0) + 1;
+        return {
+          ...p,
+          spoilerReportedCount: newCount,
+          isSpoiler: true, // Mark as spoiler once reported
+        };
+      });
+      savePostsToStorage(next);
+      return next;
+    });
   };
 
-  // 11. Rate and Review Book
-  const rateAndReviewBook = (bookId: string, rating: number, review: string) => {
-    if (!activeUserId || !profile) return;
-
+  // 8. Rate & Review Book
+  const rateAndReviewBook = (
+    bookId: string,
+    rating: number,
+    reviewText?: string,
+    isSpoiler = false,
+  ) => {
     mutateActiveAccount((acc) => {
-      const book = acc.library.find((b) => b.id === bookId);
-      if (!book) return {};
-
-      return {
-        library: acc.library.map((b) =>
-          b.id === bookId
-            ? { ...b, userRating: rating, userReview: review }
-            : b,
-        ),
-      };
+      const updatedLib = acc.library.map((b) => {
+        if (b.id !== bookId) return b;
+        return {
+          ...b,
+          userRating: rating,
+          userReview: reviewText,
+          isReviewSpoiler: isSpoiler,
+        };
+      });
+      return { library: updatedLib };
     });
 
-    // Also create a review post
-    const book = library.find((b) => b.id === bookId);
-    if (book) {
-      createPost(review || `⭐ ${rating}/5`, 'review', { id: book.id, title: book.title, author: book.author, cover: book.cover });
+    // Also share to feed if review text is provided
+    if (reviewText && reviewText.trim()) {
+      createPost({
+        content: reviewText,
+        bookId,
+        rating,
+        isSpoiler,
+        type: 'review',
+      });
+    } else if (rating > 0) {
+      const book = library.find((b) => b.id === bookId);
+      if (book && profile) {
+        const newPost: SocialPost = {
+          id: `rate-${Date.now()}`,
+          userId: profile.id || activeUserId || 'user',
+          userName: profile.name,
+          userUsername: profile.username || 'reader',
+          type: 'activity',
+          activityType: 'rated',
+          content: `"${book.title}" kitabına ${rating}/5 puan verdi. ⭐`,
+          book: {
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            cover: book.cover,
+          },
+          rating,
+          isSpoiler: false,
+          likes: [],
+          comments: [],
+          createdAt: new Date().toISOString(),
+        };
+        setPosts((prev) => {
+          const next = [newPost, ...prev];
+          savePostsToStorage(next);
+          return next;
+        });
+      }
     }
   };
 
-  // 12. Add to Library
+  // 9. Library Actions
   const addToLibrary = (book: Book, status: ReadingStatus = 'want') => {
     mutateActiveAccount((acc) => {
-      if (acc.library.some((b) => b.id === book.id)) return {};
-
-      const newLibraryBook: LibraryBook = {
-        id: book.id,
-        workId: book.workId,
-        title: book.title,
-        originalTitle: book.originalTitle,
-        author: book.author,
-        cover: book.cover,
-        pages: book.pages || 0,
-        year: book.year,
-        publisher: book.publisher,
-        category: book.category,
-        isbn: book.isbn,
-        language: book.language || 'tr',
-        status,
-        progress: 0,
-        minutes: 0,
-        rating: book.rating,
-        ratingSource: book.ratingSource,
-        description: book.description,
-      };
-
-      return {
-        library: [...acc.library, newLibraryBook],
-      };
-    });
-  };
-
-  // 13. Update Book
-  const updateBook = (id: string, changes: Partial<LibraryBook>) => {
-    mutateActiveAccount((acc) => {
-      return {
-        library: acc.library.map((b) =>
-          b.id === id ? { ...b, ...changes } : b,
-        ),
-      };
-    });
-  };
-
-  // 14. Remove from Library
-  const removeFromLibrary = (id: string) => {
-    mutateActiveAccount((acc) => {
-      return {
-        library: acc.library.filter((b) => b.id !== id),
-      };
-    });
-  };
-
-  // 15. Record Reading (progress + minutes)
-  const recordReading = (pages: number, bookId?: string, minutes?: number) => {
-    mutateActiveAccount((acc) => {
-      const today = todayKey();
-      const todayLogIndex = acc.readingLogs.findIndex((log) => log.date === today);
-
-      let updatedLogs = acc.readingLogs;
-      if (todayLogIndex >= 0) {
-        updatedLogs[todayLogIndex] = {
-          ...updatedLogs[todayLogIndex],
-          pages: updatedLogs[todayLogIndex].pages + pages,
-          minutes: updatedLogs[todayLogIndex].minutes + (minutes || 0),
+      const exists = acc.library.some((b) => b.id === book.id);
+      if (exists) {
+        return {
+          library: acc.library.map((b) => (b.id === book.id ? { ...b, status } : b)),
         };
-      } else {
-        updatedLogs = [
-          ...acc.readingLogs,
-          {
-            id: `log_${Date.now()}`,
-            date: today,
-            pages,
-            minutes: minutes || 0,
-            bookId,
-          },
-        ];
       }
-
-      const updatedProfile = {
-        ...acc.profile,
-        todayPages: acc.profile.todayPages + pages,
-        todayMinutes: acc.profile.todayMinutes + (minutes || 0),
-        todayPagesDate: today,
+      const isFinished = status === 'finished';
+      const newBook: LibraryBook = {
+        ...book,
+        status,
+        progress: isFinished ? book.pages : 0,
+        minutes: 0,
+        addedAt: new Date().toISOString(),
       };
+      return { library: [newBook, ...acc.library] };
+    });
 
+    // Create activity post in social feed
+    if (profile) {
+      const actType = status === 'reading' ? 'started' : status === 'finished' ? 'finished' : 'added_to_want';
+      const actText =
+        status === 'reading'
+          ? `"${book.title}" kitabını okumaya başladı.`
+          : status === 'finished'
+          ? `"${book.title}" kitabını bitirdi! 📖🎉`
+          : `"${book.title}" kitabını okuma listesine ekledi.`;
+
+      const newPost: SocialPost = {
+        id: `act-${Date.now()}`,
+        userId: profile.id || activeUserId || 'user',
+        userName: profile.name,
+        userUsername: profile.username || 'reader',
+        type: 'activity',
+        activityType: actType,
+        content: actText,
+        book: {
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          cover: book.cover,
+        },
+        isSpoiler: false,
+        likes: [],
+        comments: [],
+        createdAt: new Date().toISOString(),
+      };
+      setPosts((prev) => {
+        const next = [newPost, ...prev];
+        savePostsToStorage(next);
+        return next;
+      });
+    }
+  };
+
+  const updateBook = (id: string, changes: Partial<LibraryBook>) => {
+    let bookToAnnounce: LibraryBook | undefined;
+    let oldStatus: ReadingStatus | undefined;
+
+    mutateActiveAccount((acc) => {
+      const currentBook = acc.library.find((b) => b.id === id);
+      if (currentBook) {
+        bookToAnnounce = currentBook;
+        oldStatus = currentBook.status;
+      }
+      const updatedLib = acc.library.map((b) => {
+        if (b.id !== id) return b;
+        const normalized =
+          changes.status === 'finished'
+            ? { ...changes, progress: b.pages }
+            : changes;
+        return { ...b, ...normalized, lastReadAt: new Date().toISOString() };
+      });
+      return { library: updatedLib };
+    });
+
+    // Announce status change to feed if changed
+    if (
+      profile &&
+      bookToAnnounce &&
+      changes.status &&
+      changes.status !== oldStatus
+    ) {
+      const actType =
+        changes.status === 'reading'
+          ? 'started'
+          : changes.status === 'finished'
+          ? 'finished'
+          : 'added_to_want';
+      const actText =
+        changes.status === 'reading'
+          ? `"${bookToAnnounce.title}" kitabını okumaya başladı.`
+          : changes.status === 'finished'
+          ? `"${bookToAnnounce.title}" kitabını okudu. 📖🎉`
+          : changes.status === 'dropped'
+          ? `"${bookToAnnounce.title}" kitabını yarım bıraktı.`
+          : `"${bookToAnnounce.title}" kitabını okuyacaklar listesine ekledi.`;
+
+      const newPost: SocialPost = {
+        id: `act-${Date.now()}`,
+        userId: profile.id || activeUserId || 'user',
+        userName: profile.name,
+        userUsername: profile.username || 'reader',
+        type: 'activity',
+        activityType: actType,
+        content: actText,
+        book: {
+          id: bookToAnnounce.id,
+          title: bookToAnnounce.title,
+          author: bookToAnnounce.author,
+          cover: bookToAnnounce.cover,
+        },
+        isSpoiler: false,
+        likes: [],
+        comments: [],
+        createdAt: new Date().toISOString(),
+      };
+      setPosts((prev) => {
+        const next = [newPost, ...prev];
+        savePostsToStorage(next);
+        return next;
+      });
+    }
+  };
+
+  const removeFromLibrary = (id: string) => {
+    mutateActiveAccount((acc) => ({
+      library: acc.library.filter((b) => b.id !== id),
+    }));
+  };
+
+  const toggleFavoriteBook = (bookId: string) => {
+    mutateActiveAccount((acc) => {
+      const updatedLib = acc.library.map((b) => {
+        if (b.id !== bookId) return b;
+        return { ...b, favorite: !b.favorite };
+      });
+      return { library: updatedLib };
+    });
+  };
+
+  const createCustomList = (name: string, description?: string) => {
+    if (!name.trim()) return;
+    const newList: CustomBookList = {
+      id: `list-${Date.now()}`,
+      name: name.trim(),
+      description: description?.trim(),
+      bookIds: [],
+      createdAt: new Date().toISOString(),
+    };
+    mutateActiveAccount((acc) => ({
+      customLists: [...(acc.customLists || []), newList],
+    }));
+  };
+
+  const deleteCustomList = (id: string) => {
+    mutateActiveAccount((acc) => ({
+      customLists: (acc.customLists || []).filter((l) => l.id !== id),
+    }));
+  };
+
+  const addBookToCustomList = (listId: string, bookId: string) => {
+    mutateActiveAccount((acc) => ({
+      customLists: (acc.customLists || []).map((l) => {
+        if (l.id !== listId) return l;
+        if (l.bookIds.includes(bookId)) return l;
+        return { ...l, bookIds: [...l.bookIds, bookId] };
+      }),
+    }));
+  };
+
+  const removeBookFromCustomList = (listId: string, bookId: string) => {
+    mutateActiveAccount((acc) => ({
+      customLists: (acc.customLists || []).map((l) => {
+        if (l.id !== listId) return l;
+        return { ...l, bookIds: l.bookIds.filter((id) => id !== bookId) };
+      }),
+    }));
+  };
+
+  // 10. Reading logs & streak
+  const recordReading = (pages: number, bookId?: string, minutes: number = 0) => {
+    const normalizedPages = Math.max(0, Math.floor(pages));
+    const normalizedMinutes = Math.max(0, Math.floor(minutes));
+    if (normalizedPages === 0 && normalizedMinutes === 0) return;
+
+    const today = todayKey();
+    const newLog: ReadingLog = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      date: today,
+      pages: normalizedPages,
+      minutes: normalizedMinutes,
+      bookId,
+      createdAt: new Date().toISOString(),
+    };
+
+    mutateActiveAccount((acc) => {
+      const updatedLogs = [newLog, ...acc.readingLogs];
+
+      // Update book progress
       let updatedLib = acc.library;
       if (bookId) {
-        const nextProgress = Math.min(
-          (updatedLib.find((b) => b.id === bookId)?.progress || 0) + pages,
-          (updatedLib.find((b) => b.id === bookId)?.pages || Infinity),
-        );
-
-        updatedLib = updatedLib.map((book) => {
-          if (book.id !== bookId) return book;
-
-          const newProgress = Math.min(nextProgress, book.pages);
+        updatedLib = acc.library.map((b) => {
+          if (b.id !== bookId) return b;
+          const nextProgress = Math.min(b.pages, Math.max(b.progress, b.progress + normalizedPages));
+          const isFinished = b.pages > 0 && nextProgress >= b.pages;
           return {
-            ...book,
-            progress: newProgress,
-            status: (book.pages > 0 && newProgress >= book.pages ? 'finished' : newProgress < book.pages && book.status === 'finished' ? 'reading' : book.status) as ReadingStatus,
+            ...b,
+            progress: nextProgress,
+            minutes: b.minutes + normalizedMinutes,
+            status: isFinished ? ('finished' as ReadingStatus) : ('reading' as ReadingStatus),
+            lastReadAt: new Date().toISOString(),
           };
         });
       }
 
+      // Update profile
+      const prevProfile = acc.profile;
+      const isSameDay = prevProfile.todayPagesDate === today;
+      const nextTodayPages = isSameDay ? prevProfile.todayPages + normalizedPages : normalizedPages;
+      const nextTodayMinutes = isSameDay ? prevProfile.todayMinutes + normalizedMinutes : normalizedMinutes;
+      const goalJustAchieved = prevProfile.todayPages < prevProfile.dailyGoal && nextTodayPages >= prevProfile.dailyGoal;
+
+      if (goalJustAchieved) {
+        try {
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { y: 0.7 },
+            colors: ['#f59e0b', '#10b981', '#6366f1', '#ec4899'],
+          });
+        } catch (_) {}
+      }
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = yesterday.toISOString().slice(0, 10);
+      const wasGoalMet = nextTodayPages >= prevProfile.dailyGoal;
+      let nextStreak = prevProfile.streak;
+
+      if (wasGoalMet && prevProfile.lastActiveDate !== today) {
+        if (prevProfile.lastActiveDate === yesterdayKey) {
+          nextStreak = prevProfile.streak + 1;
+        } else {
+          nextStreak = 1;
+        }
+      }
+
+      const updatedProfile: ReaderProfile = {
+        ...prevProfile,
+        todayPages: nextTodayPages,
+        todayMinutes: nextTodayMinutes,
+        todayPagesDate: today,
+        streak: nextStreak,
+        longestStreak: Math.max(prevProfile.longestStreak || 0, nextStreak),
+        lastActiveDate: wasGoalMet ? today : prevProfile.lastActiveDate,
+        xp: (prevProfile.xp || 0) + normalizedPages * 2,
+      };
+
       return {
         readingLogs: updatedLogs,
-        profile: updatedProfile,
         library: updatedLib,
+        profile: updatedProfile,
       };
     });
   };
 
-  // 16. Update Reading Log
   const updateReadingLog = (id: string, pages: number) => {
+    const normalizedPages = Math.max(0, Math.floor(pages));
     mutateActiveAccount((acc) => {
       const existing = acc.readingLogs.find((l) => l.id === id);
-      if (!existing) return {};
+      if (!existing || existing.pages === normalizedPages) return {};
+      const diff = normalizedPages - existing.pages;
+      const updatedLogs = acc.readingLogs.map((l) => (l.id === id ? { ...l, pages: normalizedPages } : l));
 
-      const pageDiff = pages - existing.pages;
-      const updatedLogs = acc.readingLogs.map((l) =>
-        l.id === id ? { ...l, pages } : l,
-      );
-
-      const today = todayKey();
       let updatedProfile = acc.profile;
+      const today = todayKey();
       if (existing.date === today) {
         updatedProfile = {
           ...acc.profile,
-          todayPages: Math.max(0, acc.profile.todayPages + pageDiff),
+          todayPages: Math.max(0, acc.profile.todayPages + diff),
         };
       }
 
       let updatedLib = acc.library;
       if (existing.bookId) {
-        const nextProgress = Math.min(
-          (updatedLib.find((b) => b.id === existing.bookId)?.progress || 0) + pageDiff,
-          (updatedLib.find((b) => b.id === existing.bookId)?.pages || Infinity),
-        );
-
-        updatedLib = updatedLib.map((book) => {
-          if (book.id !== existing.bookId) return book;
-
-          const newProgress = Math.min(nextProgress, book.pages);
+        updatedLib = acc.library.map((b) => {
+          if (b.id !== existing.bookId) return b;
+          const newProgress = Math.min(b.pages, Math.max(0, b.progress + diff));
           return {
-            ...book,
+            ...b,
             progress: newProgress,
-            status: (book.pages > 0 && newProgress >= book.pages ? 'finished' : newProgress < book.pages && book.status === 'finished' ? 'reading' : book.status) as ReadingStatus,
+            status: (newProgress >= b.pages ? 'finished' : 'reading') as ReadingStatus,
           };
         });
       }
@@ -531,7 +790,6 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // 17. Delete Reading Log
   const deleteReadingLog = (id: string) => {
     mutateActiveAccount((acc) => {
       const existing = acc.readingLogs.find((l) => l.id === id);
@@ -554,7 +812,6 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // 18. Reset Demo (Clears all for testing)
   const resetDemo = () => {
     setAccounts({});
     setActiveUserId(null);
@@ -564,42 +821,7 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_USER_ID);
   };
 
-  // 19. Is in Library
   const isInLibrary = (id: string) => library.some((b) => b.id === id);
-
-  // 20. Toggle Favorite Book
-  const toggleFavoriteBook = (bookId: string) => {
-    mutateActiveAccount((acc) => {
-      return {
-        library: acc.library.map((b) =>
-          b.id === bookId ? { ...b, isFavorite: !b.isFavorite } : b,
-        ),
-      };
-    });
-  };
-
-  // 21. Create Custom List
-  const createCustomList = (name: string) => {
-    mutateActiveAccount((acc) => {
-      const newList: CustomBookList = {
-        id: `list_${Date.now()}`,
-        name,
-        books: [],
-      };
-      return {
-        customLists: [...acc.customLists, newList],
-      };
-    });
-  };
-
-  // 22. Delete Custom List
-  const deleteCustomList = (listId: string) => {
-    mutateActiveAccount((acc) => {
-      return {
-        customLists: acc.customLists.filter((l) => l.id !== listId),
-      };
-    });
-  };
 
   return (
     <ReaderContext.Provider
@@ -633,6 +855,8 @@ export function ReaderProvider({ children }: { children: React.ReactNode }) {
         toggleFavoriteBook,
         createCustomList,
         deleteCustomList,
+        addBookToCustomList,
+        removeBookFromCustomList,
       }}
     >
       {children}
