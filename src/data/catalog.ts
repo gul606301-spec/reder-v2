@@ -1,4 +1,5 @@
 import { Book, BookNews, ReadingStatus, UpcomingBook } from '../types';
+import { normalizeBookWithTurkishEdition } from '../utils/bookNormalization';
 
 export const todayKey = () => new Date().toISOString().slice(0, 10);
 
@@ -169,8 +170,8 @@ export const featuredBooks: Book[] = [
     hasVerifiedTurkishEdition: true,
     description:
       'Sevgi, iyilik ve insanın varoluş amacını sorgulayan, Tolstoy’un kaleme aldığı zamansız felsefi masallar.',
-  }
-];
+  },
+].map((book) => normalizeBookWithTurkishEdition(book));
 
 export const upcomingBooks: UpcomingBook[] = [
   {
@@ -183,7 +184,7 @@ export const upcomingBooks: UpcomingBook[] = [
     pages: 310,
     description: 'Nora Seed’in sonsuz olasılıklar arasındaki yeni yolculuğu ve paralel seçimlerin yankıları.',
     badge: 'Yakında',
-    isPreorder: true
+    isPreorder: true,
   },
   {
     id: 'up-2',
@@ -195,7 +196,7 @@ export const upcomingBooks: UpcomingBook[] = [
     pages: 280,
     description: 'Ege’nin ıssız bir koyunda unutulmuş bir ailenin üç kuşağa yayılan derin sırları ve özgürlük arayışı.',
     badge: 'Yeni Çıkacak',
-    isPreorder: true
+    isPreorder: true,
   },
   {
     id: 'up-3',
@@ -207,7 +208,7 @@ export const upcomingBooks: UpcomingBook[] = [
     pages: 240,
     description: 'İnsan beyninin evrimi, sentetik düşünce ve 21. yüzyılda insan kalabilmenin nörobiyolojik yolları.',
     badge: 'Ön Sipariş',
-    isPreorder: true
+    isPreorder: true,
   },
   {
     id: 'up-4',
@@ -219,8 +220,8 @@ export const upcomingBooks: UpcomingBook[] = [
     pages: 450,
     description: 'Dünya edebiyatının anıt eseri için hazırlanan ilk defa yayımlanacak arşiv gravürlü koleksiyon edisyonu.',
     badge: 'Özel Baskı',
-    isPreorder: false
-  }
+    isPreorder: false,
+  },
 ];
 
 export const bookNewsList: BookNews[] = [
@@ -232,7 +233,7 @@ export const bookNewsList: BookNews[] = [
     summary: 'Bu yılın kısa listesinde dünya edebiyatının dört bir yanından altı çarpıcı çeviri roman yer alıyor.',
     content: `Uluslararası Booker Ödülü jürisi bu yılın en dikkat çeken çeviri eserlerinden oluşan 6 kitaplık kısa listeyi kamuoyuyla paylaştı.
 
-Jüri başkanı, bu yılki seçkide özellikle toplumsal hafıza, iklim krizinin birey üzerindeki etkileri ve aile bağlarının dönüştürücü gücünü işleyen metinlerin öne çıktığını belirtti. 
+Jüri başkanı, bu yılki seçkide özellikle toplumsal hafıza, iklim krizinin birey üzerindeki etkileri ve aile bağlarının dönüştürücü gücünü işleyen metinlerin öne çıktığı belirtiliyor.
 
 Kazanan eser önümüzdeki ay Londra'da düzenlenecek gala gecesinde açıklanacak ve ödül tutarı yazar ile çevirmen arasında eşit olarak bölüştürülecek.`,
     date: '20 Eylül 2026',
@@ -248,7 +249,7 @@ Kazanan eser önümüzdeki ay Londra'da düzenlenecek gala gecesinde açıklanac
     summary: 'Nobel ödüllü yazar, İstanbul’un kaybolan zanaatları ve sahaflarını merkeze alan yeni bir roman üzerinde çalıştığını açıkladı.',
     content: `Orhan Pamuk katıldığı söyleşide, son iki yıldır üzerinde titizlikle çalıştığı yeni kurgu projesine dair ipuçları paylaştı.
 
-Yazar, yeni kitabında 1970'ler ile 1990'lar arasındaki Beyoğlu'nun sahaf dükkanlarını, eski elyazması meraklılarını ve unutulmaya yüz tutmuş zanaatkarlarını konu aldığını ifade etti. Romanın 2027 baharında okurla buluşması planlanıyor.`,
+Yazar, yeni kitabında 1970'ler ile 1990'lar arasındaki Beyoğlu'nun sahaf dükkanlarını, eski elyazması meraklılarını ve unutulmaya yüz tutmuş zanaatkarlarını konu aldığını ifade etti.`,
     date: '18 Eylül 2026',
     source: 'Kültür & Sanat Masası',
     sourceUrl: 'https://www.orhanpamuk.net',
@@ -262,7 +263,7 @@ Yazar, yeni kitabında 1970'ler ile 1990'lar arasındaki Beyoğlu'nun sahaf dük
     summary: 'Yayınevi, bugüne dek Türkçeye kazandırılmamış çağdaş Latin Amerika ve Doğu Avrupa eserlerini okurla buluşturuyor.',
     content: `Can Yayınları, dünya edebiyatının gölgede kalmış kıymetli metinlerini kapsayan "Kayıp Sesler" dizisini duyurdu.
 
-Dizinin editörlüğünü üstlenen ekip, ilk etapta 10 kitaptan oluşan bir seçki hazırladıklarını ve ilk üç kitabın Ekim ayında raflarda olacağını belirtti. Kitaplar özgün dillerinden doğrudan Türkçeye aktarılıyor.`,
+Dizinin editörlüğünü üstlenen ekip, ilk etapta 10 kitaptan oluşan bir seçki hazırladıklarını ve ilk üç kitabın Ekim ayında raflarda olacağını belirtti.`,
     date: '15 Eylül 2026',
     source: 'Yayın Dünyası',
     sourceUrl: 'https://canyayinlari.com',
@@ -276,12 +277,12 @@ Dizinin editörlüğünü üstlenen ekip, ilk etapta 10 kitaptan oluşan bir se�
     summary: 'Kasım ayında kapılarını açacak olan fuarda 800’ü aşkın yayınevi ve yüzlerce imza günü edebiyatseverleri ağırlayacak.',
     content: `Bu yıl 43. kez düzenlenecek olan Uluslararası İstanbul Kitap Fuarı, okuma alışkanlıklarının dijital çağdaki dönüşümüne odaklanacak.
 
-Fuar kapsamında paneller, yazar-okur buluşmaları, atölyeler ve genç okurlar için özel interaktif okuma salonları kurulacak. Girişler öğrenciler ve öğretmenler için ücretsiz olacak.`,
+Fuar kapsamında paneller, yazar-okur buluşmaları, atölyeler ve genç okurlar için özel interaktif okuma salonları kurulacak.`,
     date: '12 Eylül 2026',
     source: 'Fuar Komitesi',
     sourceUrl: 'https://istanbulkitapfuari.com',
     imageUrl: 'https://images.unsplash.com/photo-1526721940322-10fb6e3ae94a?auto=format&fit=crop&q=80&w=600',
-  }
+  },
 ];
 
 export const initialProfile = {
@@ -307,7 +308,7 @@ export const initialLibrary: import('../types').LibraryBook[] = [];
 
 export const initialReadingLogs: import('../types').ReadingLog[] = [];
 
-export const bookOfTheMonth: import('../types').Book & { month: string; discussionTopic: string } = {
+export const bookOfTheMonth: import('../types').Book & { month: string; discussionTopic: string } = normalizeBookWithTurkishEdition({
   id: 'bom-2026-09',
   workId: 'work-blindness',
   month: 'Eylül 2026',
@@ -329,15 +330,15 @@ export const bookOfTheMonth: import('../types').Book & { month: string; discussi
   description:
     'Bilinmeyen bir zamanda, adı belirtilmeyen bir ülkede aniden başlayan bulaşıcı bir beyaz körlük salgını. İnsan doğasının, vicdanın ve medeniyetin sınırlarını zorlayan sarsıcı bir başyapıt.',
   discussionTopic: 'Gözlerimizi kaybetmek mi, yoksa vicdanımızı kaybetmek mi daha tehlikeli?',
-};
+}) as import('../types').Book & { month: string; discussionTopic: string };
 
 export const mysteryBooks: import('../types').MysteryBook[] = [
   {
     id: 'myst-1',
     category: 'Felsefi & Psikolojik',
     summary:
-      'Gecenin bir yarısı uyanıp kendi varoluşunun anlamsızlığıyla yüzleşen bir adam. Bir cinayet planı kurar; fakat vicdanı, teorisinin önüne geçerek onu adım adım ruhsal bir mahkemeye sürükler.',
-    book: {
+      'Gecenin bir yarısı uyanıp kendi varoluşunun anlamsızlığıyla yüzleşen bir adam. Bir cinayet planı kurar; fakat vicdanı, teorisinin önüne geçerek onu adım adım ruhsal bir çöküşe sürükler.',
+    book: normalizeBookWithTurkishEdition({
       id: 'ol-crime-and-punishment',
       workId: 'work-crime-and-punishment',
       title: 'Suç ve Ceza',
@@ -356,14 +357,14 @@ export const mysteryBooks: import('../types').MysteryBook[] = [
       ratingSource: '4.9 / 5 (Goodreads)',
       readersCount: 1250,
       description: 'Raskolnikov’un iç dünyası, vicdan azabı ve insan doğasının en derin çatışmaları.',
-    },
+    }),
   },
   {
     id: 'myst-2',
     category: 'Kişisel Gelişim & Psikoloji',
     summary:
-      'Korkunç bir toplama kampında hayatta kalan bir nörolog ve psikiyatrist, insanın en zor şartlarda dahi acıya bir anlam bularak nasıl ayakta kalabileceğini kendi deneyimleriyle kanıtlıyor.',
-    book: {
+      'Korkunç bir toplama kampında hayatta kalan bir nörolog ve psikiyatrist, insanın en zor şartlarda dahi acıya bir anlam bularak nasıl ayakta kalabileceğini kendi deneyimleriyle anlatır.',
+    book: normalizeBookWithTurkishEdition({
       id: 'ol-mans-search-for-meaning',
       title: 'İnsanın Anlam Arayışı',
       author: 'Viktor E. Frankl',
@@ -375,14 +376,14 @@ export const mysteryBooks: import('../types').MysteryBook[] = [
       ratingSource: '4.7 / 5 (Reader Skoru)',
       readersCount: 890,
       description: 'Logoterapinin doğuşu ve insanın her koşulda anlam bulma kudreti.',
-    },
+    }),
   },
   {
     id: 'myst-3',
     category: 'Bilim Kurgu & Felsefe',
     summary:
       'Uzak bir çöl gezegeni, evrenin en değerli baharatı ve kaderinden kaçamayarak devrimci bir mesih haline gelen genç bir dükün görkemli epik yolculuğu.',
-    book: {
+    book: normalizeBookWithTurkishEdition({
       id: 'ol-dune',
       title: 'Dune',
       author: 'Frank Herbert',
@@ -394,14 +395,14 @@ export const mysteryBooks: import('../types').MysteryBook[] = [
       ratingSource: '4.8 / 5 (Goodreads)',
       readersCount: 2100,
       description: 'Arrakis çölünde ekoloji, siyaset, din ve insan bilincinin devasa destanı.',
-    },
+    }),
   },
   {
     id: 'myst-4',
     category: 'Türk Edebiyatı',
     summary:
       'Anadolu’nun unutulmuş bir kasabasına sürgün edilen genç bir öğretmen, köylülerin yabancılığıyla ve kendi içindeki yalnızlıkla savaşırken aşkı ve fedakarlığı keşfeder.',
-    book: {
+    book: normalizeBookWithTurkishEdition({
       id: 'ol-calikusu',
       title: 'Çalıkuşu',
       author: 'Reşat Nuri Güntekin',
@@ -413,7 +414,7 @@ export const mysteryBooks: import('../types').MysteryBook[] = [
       ratingSource: '4.6 / 5',
       readersCount: 640,
       description: 'Feride’nin hüzünlü ve cesur hayat hikayesi.',
-    },
+    }),
   },
 ];
 
@@ -461,5 +462,3 @@ export const triviaQuestions: import('../types').TriviaQuestion[] = [
 ];
 
 export const initialSocialPosts: import('../types').SocialPost[] = [];
-
-
