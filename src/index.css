@@ -8,7 +8,38 @@
   
   body {
     font-family: var(--font-sans);
+    background: #fffaf3;
   }
+}
+
+.app-shell {
+  background:
+    radial-gradient(circle at 5% 0%, rgba(255, 175, 142, 0.34), transparent 26rem),
+    radial-gradient(circle at 96% 9%, rgba(155, 123, 244, 0.2), transparent 30rem),
+    linear-gradient(145deg, #fffaf3 0%, #fff7ef 45%, #f4f1ff 100%);
+}
+
+.app-main {
+  position: relative;
+}
+
+.app-main::before {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  width: 18rem;
+  height: 18rem;
+  right: -8rem;
+  bottom: 4rem;
+  border-radius: 9999px;
+  background: rgba(93, 195, 208, 0.12);
+  filter: blur(36px);
+  pointer-events: none;
+}
+
+.app-main > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Custom scrollbar for modern sleek aesthetic */

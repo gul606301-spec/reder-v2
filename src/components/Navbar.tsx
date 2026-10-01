@@ -23,17 +23,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenG
   return (
     <>
       {/* Top App Bar */}
-      <header className="sticky top-0 z-40 bg-neutral-900/90 backdrop-blur-md border-b border-neutral-800">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-40 border-b border-white/60 bg-[#fffaf3]/80 backdrop-blur-xl">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-[4.5rem] flex items-center justify-between">
           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab('home')}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-neutral-950 flex items-center justify-center font-black shadow-md shadow-amber-500/20">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#ff745d] via-[#f45477] to-[#7659e8] text-white flex items-center justify-center font-black shadow-lg shadow-[#f45477]/25">
               <BookMarked className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-serif font-black text-xl tracking-tight text-white block leading-none">
+              <span className="font-serif font-black text-xl tracking-tight text-[#17233f] block leading-none">
                 Reader Hub
               </span>
-              <span className="text-[10px] tracking-wider text-amber-500 font-semibold uppercase">
+              <span className="text-[10px] tracking-wider text-[#e35d57] font-bold uppercase">
                 Kişisel Okuma Alanı
               </span>
             </div>
@@ -44,13 +44,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenG
             {profile ? (
               <button
                 onClick={onOpenGoalModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-800 hover:bg-neutral-750 border border-neutral-700/80 text-xs font-semibold text-neutral-200 transition-all cursor-pointer group"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white hover:bg-[#fff5ed] border border-[#f0dfd5] text-xs font-semibold text-[#273350] transition-all cursor-pointer group shadow-sm"
                 title="Günlük okuma hedefini yönet"
               >
-                <Flame className="w-4 h-4 text-amber-500 fill-amber-500 group-hover:scale-110 transition-transform" />
-                <span className="text-amber-400 font-bold">{profile.streak} gün</span>
-                <span className="text-neutral-500">|</span>
-                <span className="text-neutral-300">
+                <Flame className="w-4 h-4 text-[#f56b4f] fill-[#f56b4f] group-hover:scale-110 transition-transform" />
+                <span className="text-[#e35d57] font-bold">{profile.streak} gün</span>
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-500">
                   {profile.todayPages}/{profile.dailyGoal} sf
                 </span>
               </button>
@@ -58,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenG
               onOpenAuthModal && (
                 <button
                   onClick={onOpenAuthModal}
-                  className="px-3.5 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-full bg-[#17233f] hover:bg-[#25365e] text-white shadow-lg shadow-[#17233f]/15 text-xs font-semibold transition-all cursor-pointer"
                 >
                   Giriş Yap
                 </button>
@@ -66,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenG
             )}
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center gap-1 pl-2 border-l border-neutral-800">
+            <nav className="hidden md:flex items-center gap-1 pl-3 border-l border-[#eaded5]">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -76,8 +76,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenG
                     onClick={() => setActiveTab(item.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                       isActive
-                        ? 'bg-amber-500 text-neutral-950 shadow-md shadow-amber-500/20'
-                        : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                        ? 'bg-[#17233f] text-white shadow-md shadow-[#17233f]/15'
+                        : 'text-slate-500 hover:text-[#17233f] hover:bg-white'
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -91,7 +91,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenG
       </header>
 
       {/* Mobile Bottom Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-800 pb-safe">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#fffaf3]/95 backdrop-blur-xl border-t border-white pb-safe shadow-[0_-10px_30px_rgba(32,38,67,0.08)]">
         <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-around">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -101,17 +101,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, onOpenG
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={`flex flex-col items-center justify-center w-16 py-1 transition-all ${
-                  isActive ? 'text-amber-400 scale-105' : 'text-neutral-400 hover:text-neutral-200'
+                  isActive ? 'text-[#17233f] scale-105' : 'text-slate-400 hover:text-[#17233f]'
                 }`}
               >
                 <div
                   className={`p-1 rounded-xl transition-colors ${
-                    isActive ? 'bg-amber-500/20 text-amber-400' : ''
+                  isActive ? 'bg-[#17233f] text-white shadow-md shadow-[#17233f]/20' : ''
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium tracking-tight mt-0.5">{item.label}</span>
+                <span className={`text-[11px] font-medium tracking-tight mt-0.5 ${isActive ? 'text-[#17233f]' : 'text-slate-500'}`}>{item.label}</span>
               </button>
             );
           })}
